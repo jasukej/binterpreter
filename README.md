@@ -1,2 +1,2 @@
 # Binterpreter
-A simple interpreter for educational purposes. Largely based off Bob Nystrom's clox in the book Crafting Interpreters; but with more advanced garbage collection (Generational GC) to better simulate modern runtimes.
+A simple bytecode interpreter for learning. Largely based off Bob Nystrom's clox in the book Crafting Interpreters; but with more advanced garbage collection (Generational GC) to better simulate modern runtimes.
