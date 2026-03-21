@@ -24,16 +24,22 @@ void writeChunk(Chunk* chunk, uint8_t byte, int line) {
     chunk->code[chunk->count] = byte;
     chunk->count++;
 
+    if (chunk->linesCount > 0 &&
+        chunk->lines[chunk->linesCount - 1].line == line) {
+        chunk->lines[chunk->linesCount - 1].count++;
+        return;
+    }
+
     if (chunk->linesCapacity < chunk->linesCount + 1) {
         int oldCapacity = chunk->linesCapacity;
-        chunk->capacity = GROW_CAPACITY(oldCapacity);
-        chunk->lines = GROW_ARRAY(LineInfo, chunk->lines, oldCapacity, chunk->linesCapacity);
+        chunk->linesCapacity = GROW_CAPACITY(oldCapacity);
+        chunk->lines = GROW_ARRAY(LineInfo, chunk->lines, oldCapacity,
+            chunk->linesCapacity);
     }
-    
-    if (chunk->lines[chunk->linesCount-1].line != line) {
-        chunk->linesCount++;
-    } 
-    chunk->lines[chunk->linesCount].count++;
+
+    chunk->lines[chunk->linesCount].line = line;
+    chunk->lines[chunk->linesCount].count = 1;
+    chunk->linesCount++;
 }
 
 void freeChunk(Chunk* chunk) {
@@ -50,9 +56,14 @@ int addConstant(Chunk* chunk, Value val) {
 
 // Given index of an instruction, return line where instruction occurs
 int getLine(Chunk* chunk, int idx) {
-    int i = 0;
-    while (i < chunk->linesCount && chunk->lines[i].line != idx) {
-        i++;
+    int instructionsSeen = 0;
+
+    for (int i = 0; i < chunk->linesCount; i++) {
+        instructionsSeen += chunk->lines[i].count;
+        if (idx < instructionsSeen) {
+            return chunk->lines[i].line;
+        }
     }
-    return i;
+
+    return -1;
 }
