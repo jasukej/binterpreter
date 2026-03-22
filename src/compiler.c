@@ -161,7 +161,7 @@ static void expression() {
     parsePrecedence(PREC_ASSIGNMENT);
 }
 
-// Note that unlike other categories, binary is an infix parser function 
+// Note that unlike other categories, binary is an infix parser function
 static void binary() {
     TokenType operatorType = parser.previous.type;
     ParseRule* rule = getRule(operatorType);
@@ -201,6 +201,11 @@ static void number() {
     emitConstant(NUMBER_VAL(value));
 }
 
+static void string() {
+    // add offsets for quotation marks denoting a string
+    emitConstant(OBJ_VAL(copyString(parser.previous.start + 1, parser.previous.length -2)));
+}
+
 static void unary() {
     TokenType operatorType = parser.previous.type;
 
@@ -237,7 +242,7 @@ static ParseRule rules[] = {
     [TOKEN_GREATER_EQUAL] = {NULL,     binary, PREC_COMPARISON},
     [TOKEN_LESS]          = {NULL,     binary, PREC_COMPARISON},
     [TOKEN_LESS_EQUAL]    = {NULL,     binary, PREC_COMPARISON},
-    [TOKEN_IDENTIFIER]    = {NULL,     NULL,   PREC_NONE},
+    [TOKEN_IDENTIFIER]    = {string,   NULL,   PREC_NONE},
     [TOKEN_STRING]        = {NULL,     NULL,   PREC_NONE},
     [TOKEN_NUMBER]        = {number,   NULL,   PREC_NONE},
     [TOKEN_AND]           = {NULL,     NULL,   PREC_NONE},
