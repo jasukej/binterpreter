@@ -11,6 +11,7 @@ typedef struct {
 	uint8_t* ip; // instruction pointer
 	Value stack[STACK_MAX];
 	Value* stackTop;
+	Obj* objects;
 } VM;
 
 typedef enum {
@@ -18,6 +19,8 @@ typedef enum {
 	INTERPRET_COMPILE_ERROR,
 	INTERPRET_RUNTIME_ERROR
 } InterpretResult;
+
+extern VM vm;
 
 // We declare a single global VM for simplicity. In real-language implementations where
 // VMs are embedded in other host applications, it is much easier to take a VM pointer.

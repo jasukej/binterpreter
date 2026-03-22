@@ -13,10 +13,14 @@
 static Obj* allocateObject(size_t size, ObjType type) {
     Obj* object = (Obj*)reallocate(NULL, 0, size);
     object->type = type;
+
+    object->next = vm.objects;
+    vm.objects = object;
     return object;
 }
 
 // (Similar to) a string constructor
+// TODO: Instead of two pointer indirections, store ObjString and char array contiguously with flexible array members.
 static ObjString* allocateString(char* chars, int length) {
     ObjString* string = ALLOCATE_OBJ(ObjString, OBJ_STRING);
     string->length = length;

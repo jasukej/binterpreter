@@ -17,6 +17,7 @@ typedef enum {
 
 struct Obj {
     ObjType type;
+    struct Obj* next; // TODO: replace intrusive list of objects with GC structs
 };
 
 struct ObjString {

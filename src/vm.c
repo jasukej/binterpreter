@@ -32,10 +32,11 @@ static void runtimeError(const char* format, ...) {
 
 void initVM() {
 	resetStack();
+	vm.objects = NULL;
 }
 
 void freeVM() {
-
+	freeObjects();
 }
 
 void push(Value value) {
@@ -122,7 +123,7 @@ static InterpretResult run() {
 					concatenate();
 				} else if (IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))) {
 					double a = AS_NUMBER(pop());
-					double B = AS_NUMBER(pop());
+					double b = AS_NUMBER(pop());
 					push(NUMBER_VAL(a + b));
 				} else {
 					runtimeError("Operands must be two numbers or two strings.");
