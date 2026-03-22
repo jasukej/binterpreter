@@ -20,7 +20,7 @@ typedef struct {
 } LineInfo;
 
 /**
-* A dynamic array to allocate in memory. 
+* A dynamic array to hold bytecode and constants. 
 * For now, we maintain line numbering in our program through another allocation
 */
 typedef struct {

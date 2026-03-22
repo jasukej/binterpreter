@@ -49,6 +49,7 @@ void freeChunk(Chunk* chunk) {
     initChunk(chunk);
 }
 
+// Add a value to the constant table and return its index
 int addConstant(Chunk* chunk, Value val) {
     writeValueArray(&chunk->constants,  val);
     return chunk->constants.count - 1;
