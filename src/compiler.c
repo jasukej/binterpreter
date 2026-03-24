@@ -93,6 +93,16 @@ static void consume(TokenType type, const char* message) {
     errorAtCurrent(message);
 }
 
+static bool check(TokenType type) {
+    return parser.current.type == type;
+}
+
+static bool match(TokenType type) {
+    if (!check(type)) return false;
+    advance();
+    return true;
+}
+
 // Write a byte to our current chunk
 static void emitByte(uint8_t byte) {
     writeChunk(currentChunk(), byte, parser.previous.line);
@@ -132,8 +142,10 @@ static void endCompiler() {
 }
 
 static void expression();
+static void statement();
+static void declaration();
 static ParseRule* getRule(TokenType type);
-static void parsePrecedence(Precedence precedence);
+static void parsePrecedence(Precedence precendence);
 
 // Parse an expression until remaining tokens are higher in precedence
 // TODO: Handle mixfix operators e.g. ternary operators (?:)
@@ -146,7 +158,7 @@ static void parsePrecedence(Precedence precedence) {
     }
 
     prefixRule();
-    
+
     // if high enough precedence, treat next token as an infix operator and parse the infix and RHS
     while (precedence <= getRule(parser.current.type)->precedence) {
         advance();
@@ -159,6 +171,30 @@ static void parsePrecedence(Precedence precedence) {
 // https://matklad.github.io/2020/04/13/simple-but-powerful-pratt-parsing.html
 static void expression() {
     parsePrecedence(PREC_ASSIGNMENT);
+}
+
+static void expressionStatement() {
+    expression();
+    consume(TOKEN_SEMICOLON, "Except ';' after expression.");
+    emitByte(OP_POP);
+}
+
+static void printStatement() {
+    expression();
+    consume(TOKEN_SEMICOLON, "Expect ';' after value.");
+    emitByte(OP_PRINT);
+}
+
+static void statement() {
+    if (match(TOKEN_PRINT)) {
+        printStatement();
+    } else {
+        expressionStatement();
+    }
+}
+
+static void declaration() {
+    statement();
 }
 
 // Note that unlike other categories, binary is an infix parser function
@@ -279,8 +315,11 @@ bool compile(const char* source, Chunk* chunk) {
     parser.panicMode = false;
 
     advance();
-    expression();
-    consume(TOKEN_EOF, "Expect end of expression.");
+
+    while (!match(TOKEN_EOF)) {
+        declaration();
+    }
+
     endCompiler();
     return !parser.hadError;
 }
