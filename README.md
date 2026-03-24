@@ -4,12 +4,18 @@ A simple bytecode interpreter with a compiler frontend. Largely based off Bob Ny
 ## Prerequisites
 - `gcc`
 - `make`
+- `cppcheck`
 
 ## Build
 ```bash
 make
 ```
 The build output can be found in `out/binterpreter`. The executable current runs as a REPL.
+
+## Lint
+```bash
+make lint
+```
 
 ### Running a source file
 WIP
