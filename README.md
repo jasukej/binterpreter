@@ -19,9 +19,9 @@ The build output can be found in `out/binterpreter`. The executable currently ru
 make lint
 ```
 ## Features
-- **Automatic memory management**: A Rust-based generational garbage collector handles all object lifecycle management, eliminating manual memory handling and the common pitfalls of reference counting.
-- [WIP] **Actor-model concurrency**: Independent VMs communicate via deep-copy message passing, enabling true multi-core execution without shared memory or a GIL.
-- [WIP] **Rust-native extensions**: Native language extensions can be written in Rust, leveraging `Send`/`Sync` traits for thread safety.
+- **Automatic memory management**: A generational garbage collector handles all object lifecycle management, eliminating manual memory handling and the drawbacks of reference counting.
+- [WIP] **Actor-model concurrency**: Independent VMs communicate via deep-copy message passing to enable multi-core execution without shared memory or a GIL.
+- [WIP] **Rust-native extensions**: Native language extensions can be written in a thread-safe manner with Rust.
 
 ### Running a source file
 WIP
