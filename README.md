@@ -1,5 +1,7 @@
 # Binterpreter
-A simple bytecode interpreter with a compiler frontend. Largely based off Bob Nystrom's clox in the book Crafting Interpreters, with a spattering of features inspired by modern runtimes.
+A bytecode interpreter with a compiler frontend, built in C with a Rust-based garbage collector. Based on Bob Nystrom's clox from Crafting Interpreters, extended with a split C/Rust memory model designed to avoid the concurrency pitfalls of GIL-dependent runtimes.
+
+See the [design document](docs/design.md) for architecture and rationale.
 
 ## Prerequisites
 - `gcc`
@@ -10,21 +12,16 @@ A simple bytecode interpreter with a compiler frontend. Largely based off Bob Ny
 ```bash
 make
 ```
-The build output can be found in `out/binterpreter`. The executable current runs as a REPL.
+The build output can be found in `out/binterpreter`. The executable currently runs as a REPL.
 
 ## Lint
 ```bash
 make lint
 ```
 ## Features
-- [WIP] **Generational garbage collection**: optimize for short-lived objects and reduce pause time.
-    - Success criteria: Lower total GC time on allocation-heavy workloads; will need to look into existing literature to quantify
-- [WIP] **Quickening**: reduce dispatch overhead by specializing hot opcodes. 
-    - Success criteria: 10% speedup on arithmetic/property benchmarks
-- [WIP] **Inline caching**: cache repeated lookup metadata at bytecode locations. 
-    - Success criteria: lower lookup cost and fewer slow-path hits; will need to look into benchmarks further to quantify
-- [WIP] **Microbenchmarking suite**: quantify optimizations
-    - Success criteria: reproducible benchmark runs, cache baseline comparisons
+- **Automatic memory management**: A Rust-based generational garbage collector handles all object lifecycle management, eliminating manual memory handling and the common pitfalls of reference counting.
+- [WIP] **Actor-model concurrency**: Independent VMs communicate via deep-copy message passing, enabling true multi-core execution without shared memory or a GIL.
+- [WIP] **Rust-native extensions**: Native language extensions can be written in Rust, leveraging `Send`/`Sync` traits for thread safety.
 
 ### Running a source file
 WIP
