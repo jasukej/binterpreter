@@ -56,6 +56,8 @@ typedef struct {
     Local locals[UINT8_COUNT];
     int localCount;     // how many locals are in scope
     int scopeDepth;     // no. of blocks surrounding current bit of code being compiled
+    int innermostLoopStart;         // byte offset to jump to, or -1 if not in a loop
+    int innermostLoopScopeDepth;    // scopeDepth of the loop, for popping locals
 } Compiler;
 
 Parser parser;
@@ -146,6 +148,16 @@ static uint8_t makeConstant(Value value) {
 static void emitBytes(uint8_t byte1, uint8_t byte2) {
     emitByte(byte1);
     emitByte(byte2);
+}
+
+static void emitLoop(int loopStart) {
+    emitByte(OP_LOOP);
+
+    int offset = currentChunk()->count - loopStart + 2;
+    if (offset > UINT16_MAX) error("Loop body too large.");
+
+    emitByte((offset >> 8) & 0xff);
+    emitByte(offset & 0xff);
 }
 
 // Writes initial jump instruction with 16-bit offset operand, returns idx of offset
@@ -387,10 +399,91 @@ static void varDeclaration() {
     defineVariable(global);
 }
 
+static void forStatement() {
+    beginScope();
+    consume(TOKEN_LEFT_PAREN, "Expect '(' after 'for'.");
+    if (match(TOKEN_SEMICOLON)) {
+        // No initializer
+    } else if (match(TOKEN_VAR)) {
+        varDeclaration();
+    } else {
+        expressionStatement();
+    }
+
+    int loopStart = currentChunk()->count;
+    int exitJump = -1;
+    if (!match(TOKEN_SEMICOLON)) {
+        expression();
+        consume(TOKEN_SEMICOLON, "Expect ';' after loop condition.");
+
+        exitJump = emitJump(OP_JUMP_IF_FALSE);
+        emitByte(OP_POP);
+    }
+    consume(TOKEN_SEMICOLON, "Expect ';'.");
+    // Parse the increment expression, if it exists.
+    if (!match(TOKEN_RIGHT_PAREN)) {
+        int bodyJump = emitJump(OP_JUMP);
+        int incrementStart = currentChunk()->count;
+        expression();
+        emitByte(OP_POP);
+        consume(TOKEN_RIGHT_PAREN, "Expect ')' after for clauses.");
+
+        emitLoop(loopStart);
+        loopStart = incrementStart;
+        patchJump(bodyJump);
+    }
+
+    statement();
+    emitLoop(loopStart);
+    
+    if (exitJump != -1) {
+        patchJump(exitJump);
+        emitByte(OP_POP);
+    }
+
+    endScope();
+}
+
 static void printStatement() {
     expression();
     consume(TOKEN_SEMICOLON, "Expect ';' after value.");
     emitByte(OP_PRINT);
+}
+
+static void whileStatement() {
+    int surroundingLoopStart = current->innermostLoopStart;
+    int surroundingLoopScope = current->innermostLoopScopeDepth;
+    current->innermostLoopStart = currentChunk()->count;
+    current->innermostLoopScopeDepth = current->scopeDepth;
+
+    int loopStart = currentChunk()->count; // Jump backwards to right before the cond expression
+    consume(TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
+    expression();
+    consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
+
+    int exitJump = emitJump(OP_JUMP_IF_FALSE);
+    emitByte(OP_POP);
+    statement();
+    emitLoop(loopStart);
+
+    patchJump(exitJump);
+    emitByte(OP_POP);
+
+    current->innermostLoopStart = surroundingLoopStart;
+    current->innermostLoopScopeDepth = surroundingLoopScope;
+}
+
+static void continueStatement() {
+    if (current->innermostLoopStart == -1) {
+        error("Can't use 'continue' outside of a loop.");
+        return;
+    }
+
+    for (int i = current->localCount - 1; i >= 0 && current->locals[i].depth > current->innermostLoopScopeDepth; i--) {
+        emitByte(OP_POP);
+    }
+    emitLoop(current->innermostLoopStart);
+    consume(TOKEN_SEMICOLON, "Expected ';' after continue");
 }
 
 /**
@@ -433,10 +526,14 @@ static void declaration() {
 static void statement() {
     if (match(TOKEN_PRINT)) {
         printStatement();
+    } else if (match(TOKEN_FOR)) {
+        forStatement();
     } else if (match(TOKEN_LEFT_BRACE)) {
         beginScope();
         block();
         endScope();
+    } else if (match(TOKEN_WHILE)) {
+        whileStatement();
     } else {
         expressionStatement();
     }
