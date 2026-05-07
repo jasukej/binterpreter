@@ -140,6 +140,7 @@ static void emitByte(uint8_t byte) {
 
 // Add the return to the end of a chunk to print the output
 static void emitReturn() {
+    emitByte(OP_NIL);
     emitByte(OP_RETURN);
 }
 
@@ -440,6 +441,26 @@ static void expressionStatement() {
     emitByte(OP_POP);
 }
 
+static void printStatement() {
+    expression();
+    consume(TOKEN_SEMICOLON, "Expect ';' after value.");
+    emitByte(OP_PRINT);
+}
+
+static void returnStatement() {
+    if (current->type == TYPE_SCRIPT) {
+        error("Can't return from top-level code.");
+    }
+
+    if (match(TOKEN_SEMICOLON)) {
+        emitReturn();
+    } else {
+        expression();
+        consume(TOKEN_SEMICOLON, "Expect ';' after return value.");
+        emitByte(OP_RETURN);
+    }
+}
+
 static void ifStatement() {
     consume(TOKEN_LEFT_PAREN, "Expect '(' after 'if'.");
     expression();
@@ -466,6 +487,8 @@ static void varDeclaration() {
         expression();
     } else if (match(TOKEN_IF)){
         ifStatement();
+    } else if (match(TOKEN_RETURN)) {
+        returnStatement();
     } else {
         emitByte(OP_NIL);
     }
@@ -517,12 +540,6 @@ static void forStatement() {
     }
 
     endScope();
-}
-
-static void printStatement() {
-    expression();
-    consume(TOKEN_SEMICOLON, "Expect ';' after value.");
-    emitByte(OP_PRINT);
 }
 
 static void whileStatement() {
