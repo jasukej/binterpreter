@@ -10,7 +10,7 @@
 #define STACK_MAX (FRAMES_MAX * UINT8_COUNT)
 
 typedef struct {
-	ObjFunction* function;
+	ObjClosure* closure;
 	uint8_t* ip; // in contrast to x86, the callee's return address is implicit
 	Value* slots;
 } CallFrame;
@@ -25,6 +25,7 @@ typedef struct {
 	// hashing the variable name on every access
 	Table globals;  // runtime variable store; maps variable name strings to their current values
 	Table strings;  // interning table; deduplicates heap-allocated strings for fast equality
+	ObjUpvalue* openUpvalues;
 	Obj* objects;
 } VM;
 
