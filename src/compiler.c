@@ -5,10 +5,10 @@
 #include "chunk.h"
 #include "common.h"
 #include "compiler.h"
+#include "debug.h"
+#include "memory.h"
 #include "scanner.h"
 #include "value.h"
-
-#include "debug.h"
 
 /**
  * Single-pass compiler that scans tokens and emits bytecode directly
@@ -867,4 +867,16 @@ ObjFunction* compile(const char* source) {
 
     ObjFunction* function = endCompiler();
     return parser.hadError ? NULL : function;
+}
+
+/**
+ * Mark the ObjFunction being built by each compiler in the 
+ * enclosing chain of scopes.
+ */
+void markCompilerRoots() {
+    Compiler* compiler = current;
+    while (compiler != NULL) {
+        markObject((Obj*)compiler->function);
+        compiler = compiler->enclosing;
+    }
 }

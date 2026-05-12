@@ -28,7 +28,11 @@ typedef struct {
 	Table strings;  // interning table; deduplicates heap-allocated strings for fast equality
 	ObjUpvalue* openUpvalues;
 	Obj* objects;
+
 	Nursery nursery;
+	Obj** grayStack;
+	int grayCount;
+	int grayCapacity;
 } VM;
 
 typedef enum {

@@ -59,6 +59,10 @@ static void defineNative(const char* name, NativeFn function) {
 void initVM() {
 	resetStack();
 	vm.objects = NULL;
+	vm.grayStack = NULL;
+	vm.grayCount = 0;
+	vm.grayCapacity = 0;
+	nurseryInit(&vm.nursery);
 
 	initTable(&vm.globals);
 	initTable(&vm.strings);
@@ -70,6 +74,12 @@ void freeVM() {
 	freeTable(&vm.globals);
 	freeTable(&vm.strings);
 	freeObjects();
+	nurseryFree(&vm.nursery);
+
+	free(vm.grayStack);
+	vm.grayStack = NULL;
+	vm.grayCount = 0;
+	vm.grayCapacity = 0;
 }
 
 void push(Value value) {

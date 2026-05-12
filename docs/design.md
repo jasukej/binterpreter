@@ -50,6 +50,25 @@ To fulfill these requirements, the design choices made cover the implementation 
 
 Alternative considered: We rejected conservative stack scanning (e.g., the Boehm GC approach), which scans the raw C call stack for pointer-like values. While a shadow stack introduces a slight overhead to PUSH/POP instructions, conservative scanning is platform-dependent, and prone to memory leaks via false positives.
 
+### State Transitions: Tricolor Marking
+The GC uses a tricolor abstraction (popularized by Djikstra) to track object liveness during tracing. Each heap object is implicitly in one of three states:
+
+| State | Encoding | Meaning |
+|-------|----------|---------|
+| White | `isMarked = false` | Unvisited & presumed unreachable until proven otherwise. |
+| Gray | `isMarked = true`, on `grayStack` | Known reachable, but its children are not yet traced. |
+| Black | `isMarked = true`, popped from `grayStack` | Fully traced, all direct children have been marked. |
+
+```mermaid
+stateDiagram-v2
+    White --> Gray : markObject
+    Gray --> Black : blackenObject
+    Black --> White : cycle reset
+    White --> [*] : sweep (unreachable)
+```
+
+A black object never references a white object. `blackenObject` enforces this by marking all children before an object leaves the gray stack. Violating this invariant could result in a dangling pointer, as the GC may collect an object still reachable through a fully-traced parent.
+
 ## Core Data Model
 TODO
 
